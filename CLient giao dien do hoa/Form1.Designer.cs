@@ -34,6 +34,8 @@
             this.btnConnect = new System.Windows.Forms.Button();
             this.lstUsers = new System.Windows.Forms.ListBox();
             this.rtbChat = new System.Windows.Forms.RichTextBox();
+            this.txtMessage = new System.Windows.Forms.TextBox();
+            this.btnSend = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // contextMenuStrip1
@@ -76,11 +78,29 @@
             this.rtbChat.TabIndex = 4;
             this.rtbChat.Text = "";
             // 
+            // txtMessage
+            // 
+            this.txtMessage.Location = new System.Drawing.Point(325, 197);
+            this.txtMessage.Name = "txtMessage";
+            this.txtMessage.Size = new System.Drawing.Size(100, 22);
+            this.txtMessage.TabIndex = 5;
+            // 
+            // btnSend
+            // 
+            this.btnSend.Location = new System.Drawing.Point(338, 246);
+            this.btnSend.Name = "btnSend";
+            this.btnSend.Size = new System.Drawing.Size(75, 23);
+            this.btnSend.TabIndex = 6;
+            this.btnSend.Text = "button1";
+            this.btnSend.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.btnSend);
+            this.Controls.Add(this.txtMessage);
             this.Controls.Add(this.rtbChat);
             this.Controls.Add(this.lstUsers);
             this.Controls.Add(this.btnConnect);
@@ -100,6 +120,8 @@
         private System.Windows.Forms.Button btnConnect;
         private System.Windows.Forms.ListBox lstUsers;
         private System.Windows.Forms.RichTextBox rtbChat;
+        private System.Windows.Forms.TextBox txtMessage;
+        private System.Windows.Forms.Button btnSend;
     }
 }
 

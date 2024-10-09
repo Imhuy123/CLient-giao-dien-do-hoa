@@ -9,28 +9,23 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Net.Sockets;
+
 namespace CLient_giao_dien_do_hoa
 {
     public partial class Form1 : Form
     {
         private Socket _clientSocket;
         private byte[] _buffer = new byte[1024];
+
         public Form1()
         {
             InitializeComponent();
         }
 
-
-
-
-
-
-
         private void Form1_Load(object sender, EventArgs e)
         {
-           
-    }
+            // Sự kiện load form
+        }
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
@@ -92,7 +87,7 @@ namespace CLient_giao_dien_do_hoa
                 }
                 else
                 {
-                    AppendMessage(text);
+                    AppendMessage(text.Replace("<EOF>", ""));
                 }
 
                 // Tiếp tục nhận dữ liệu từ server
@@ -104,6 +99,37 @@ namespace CLient_giao_dien_do_hoa
             }
         }
 
+        private void btnSend_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string selectedUser = lstUsers.SelectedItem?.ToString();
+                if (string.IsNullOrEmpty(selectedUser))
+                {
+                    MessageBox.Show("Please select a user to send the message.");
+                    return;
+                }
+
+                string message = txtMessage.Text.Trim();
+                if (string.IsNullOrEmpty(message))
+                {
+                    MessageBox.Show("Please enter a message.");
+                    return;
+                }
+
+                // Gửi tin nhắn với định dạng "ToUser:MessageContent<EOF>"
+                string formattedMessage = $"{selectedUser}:{message}<EOF>";
+                byte[] messageSent = Encoding.ASCII.GetBytes(formattedMessage);
+                _clientSocket.Send(messageSent);
+
+                AppendMessage($"You (to {selectedUser}): {message}");
+                txtMessage.Clear();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error sending message: " + ex.Message);
+            }
+        }
 
         private void AppendMessage(string message)
         {
@@ -122,6 +148,5 @@ namespace CLient_giao_dien_do_hoa
                 _clientSocket.Close();
             }
         }
-
     }
 }
