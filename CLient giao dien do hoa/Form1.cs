@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CLient_giao_dien_do_hoa
@@ -16,6 +11,8 @@ namespace CLient_giao_dien_do_hoa
     {
         private Socket _clientSocket;
         private byte[] _buffer = new byte[1024];
+        private Dictionary<string, List<string>> _chatHistory = new Dictionary<string, List<string>>(); // Lưu trữ lịch sử tin nhắn
+        private string _currentChatUser = null; // Người dùng hiện tại đang chat
 
         public Form1()
         {
@@ -24,7 +21,7 @@ namespace CLient_giao_dien_do_hoa
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Sự kiện load form
+            // Mã khởi tạo nếu cần
         }
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -38,16 +35,13 @@ namespace CLient_giao_dien_do_hoa
                     return;
                 }
 
-                // Định nghĩa tên miền và cổng
-                string domainName = "huynas123.synology.me"; // Tên miền cụ thể
-                int portToRun = 8081; // Cổng 8081
+                string domainName = "huynas123.synology.me";
+                int portToRun = 8081;
 
-                // Chuyển tên miền thành IP
                 IPAddress[] ipAddresses = Dns.GetHostAddresses(domainName);
                 IPAddress ipAddr = ipAddresses[0];
                 IPEndPoint localEndPoint = new IPEndPoint(ipAddr, portToRun);
 
-                // Tạo socket TCP/IP
                 _clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 _clientSocket.Connect(localEndPoint);
                 AppendMessage($"Connected to server {domainName}:{portToRun}");
@@ -72,7 +66,6 @@ namespace CLient_giao_dien_do_hoa
                 int received = _clientSocket.EndReceive(AR);
                 string text = Encoding.ASCII.GetString(_buffer, 0, received);
 
-                // Kiểm tra nếu server gửi danh sách người dùng
                 if (text.StartsWith("UserList:"))
                 {
                     string userList = text.Replace("UserList:", "").Replace("<EOF>", "");
@@ -87,7 +80,26 @@ namespace CLient_giao_dien_do_hoa
                 }
                 else
                 {
-                    AppendMessage(text.Replace("<EOF>", ""));
+                    // Tin nhắn định dạng "FromUser:MessageContent"
+                    string[] splitMessage = text.Replace("<EOF>", "").Split(new char[] { ':' }, 2);
+                    if (splitMessage.Length == 2)
+                    {
+                        string fromUser = splitMessage[0];
+                        string messageContent = splitMessage[1];
+
+                        // Lưu trữ tin nhắn vào lịch sử chat của người gửi
+                        if (!_chatHistory.ContainsKey(fromUser))
+                        {
+                            _chatHistory[fromUser] = new List<string>();
+                        }
+                        _chatHistory[fromUser].Add($"{fromUser}: {messageContent}");
+
+                        // Nếu người nhận là người dùng hiện tại, hiển thị tin nhắn ngay lập tức
+                        if (_currentChatUser == fromUser)
+                        {
+                            AppendMessage($"{fromUser}: {messageContent}");
+                        }
+                    }
                 }
 
                 // Tiếp tục nhận dữ liệu từ server
@@ -103,8 +115,7 @@ namespace CLient_giao_dien_do_hoa
         {
             try
             {
-                string selectedUser = lstUsers.SelectedItem?.ToString();
-                if (string.IsNullOrEmpty(selectedUser))
+                if (string.IsNullOrEmpty(_currentChatUser))
                 {
                     MessageBox.Show("Please select a user to send the message.");
                     return;
@@ -117,12 +128,20 @@ namespace CLient_giao_dien_do_hoa
                     return;
                 }
 
-                // Gửi tin nhắn với định dạng "ToUser:MessageContent<EOF>"
-                string formattedMessage = $"{selectedUser}:{message}<EOF>";
+                // Gửi tin nhắn với định dạng "RecipientUser:Message<EOF>"
+                string formattedMessage = $"{_currentChatUser}:{message}<EOF>";
                 byte[] messageSent = Encoding.ASCII.GetBytes(formattedMessage);
                 _clientSocket.Send(messageSent);
 
-                AppendMessage($"You (to {selectedUser}): {message}");
+                // Lưu tin nhắn vào lịch sử chat của người dùng hiện tại
+                if (!_chatHistory.ContainsKey(_currentChatUser))
+                {
+                    _chatHistory[_currentChatUser] = new List<string>();
+                }
+                _chatHistory[_currentChatUser].Add($"You: {message}");
+
+                // Hiển thị tin nhắn đã gửi
+                AppendMessage($"You: {message}");
                 txtMessage.Clear();
             }
             catch (Exception ex)
@@ -133,10 +152,30 @@ namespace CLient_giao_dien_do_hoa
 
         private void AppendMessage(string message)
         {
+            // Thêm tin nhắn vào rtbChat và tự động cuộn xuống dòng cuối cùng
             rtbChat.Invoke((MethodInvoker)(() =>
             {
                 rtbChat.AppendText(message + Environment.NewLine);
+                rtbChat.ScrollToCaret();
             }));
+        }
+
+        private void lstUsers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lstUsers.SelectedItem != null)
+            {
+                _currentChatUser = lstUsers.SelectedItem.ToString();
+
+                // Hiển thị lịch sử tin nhắn của người dùng hiện tại
+                rtbChat.Clear();
+                if (_chatHistory.ContainsKey(_currentChatUser))
+                {
+                    foreach (string msg in _chatHistory[_currentChatUser])
+                    {
+                        AppendMessage(msg);
+                    }
+                }
+            }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -147,6 +186,11 @@ namespace CLient_giao_dien_do_hoa
                 _clientSocket.Shutdown(SocketShutdown.Both);
                 _clientSocket.Close();
             }
+        }
+
+        private void rtbChat_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

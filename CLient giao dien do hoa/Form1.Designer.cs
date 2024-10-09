@@ -77,6 +77,7 @@
             this.rtbChat.Size = new System.Drawing.Size(140, 129);
             this.rtbChat.TabIndex = 4;
             this.rtbChat.Text = "";
+            this.rtbChat.TextChanged += new System.EventHandler(this.rtbChat_TextChanged);
             // 
             // txtMessage
             // 
